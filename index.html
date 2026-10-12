@@ -1,0 +1,617 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Elysium Movement and World</title>
+<meta name="description" content="Donovan Faucette's work on Project Elysium, a Roblox action RPG: a weighted movement system with phase-synced mocap, stylized water VFX, and world-building.">
+<link rel="canonical" href="https://elysiumforsakendungeons.online/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Elysium: The Forsaken Dungeons">
+<meta property="og:title" content="Elysium: The Forsaken Dungeons | Gameplay and world">
+<meta property="og:description" content="Donovan Faucette's work on Project Elysium, a Roblox action RPG: a weighted movement system with phase-synced mocap, stylized water VFX, and world-building.">
+<meta property="og:url" content="https://elysiumforsakendungeons.online/">
+<meta property="og:image" content="https://elysiumforsakendungeons.online/og-image.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="627">
+<meta property="og:image:alt" content="The Elysium: The Forsaken Dungeons logo over an overgrown courtyard">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Zilla+Slab:wght@500;600;700&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0e1829; --bg-raised:#152340; --ink:#f1e9d6; --ink-soft:#a7b1c4; --rule:#2a3c5e;
+  --gold:#f2aa33; --cyan:#4fd6f2; --copper:#d0743a; --grid:#1a2a47; --code-bg:#0a1220;
+  --focus:#ffd27a; --beam:#4fd6f2; color-scheme:dark;
+}
+@media (prefers-color-scheme: light){
+  :root:not([data-theme="dark"]){
+    --bg:#f2ece0; --bg-raised:#e8e0cf; --ink:#14213a; --ink-soft:#4a5670; --rule:#cdc3ae;
+    --gold:#9a6406; --cyan:#0e7891; --copper:#a3511e; --grid:#e1d8c5; --code-bg:#f8f4ea;
+    --focus:#9a6406; --beam:#0e7891; color-scheme:light;
+}
+}
+:root[data-theme="light"]{
+    --bg:#f2ece0; --bg-raised:#e8e0cf; --ink:#14213a; --ink-soft:#4a5670; --rule:#cdc3ae;
+    --gold:#9a6406; --cyan:#0e7891; --copper:#a3511e; --grid:#e1d8c5; --code-bg:#f8f4ea;
+    --focus:#9a6406; --beam:#0e7891; color-scheme:light;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0; background:var(--bg); color:var(--ink); font:400 1.0625rem/1.6 "Atkinson Hyperlegible",system-ui,sans-serif}
+a{color:var(--gold); text-underline-offset:3px}
+a:hover{text-decoration-thickness:2px}
+:focus-visible{outline:2px solid var(--focus); outline-offset:3px; border-radius:2px}
+.wrap{max-width:1120px; margin:0 auto; padding:0 16px}
+@media (min-width:720px){.wrap{padding:0 32px}}
+h1,h2,h3{font-family:"Zilla Slab",Georgia,serif; line-height:1.1; margin:0}
+h1{font-size:clamp(3rem,9vw,6.25rem); font-weight:700; letter-spacing:-.01em}
+h2{font-size:clamp(2rem,4.5vw,2.75rem); font-weight:600}
+h3{font-size:1.375rem; font-weight:600}
+p{margin:0 0 1em}
+code{font-family:"JetBrains Mono",ui-monospace,monospace; font-size:.875em}
+
+.hero{padding-top:40px; padding-bottom:8px}
+.hero-top{display:flex; flex-wrap:wrap; gap:8px 32px; align-items:end; justify-content:space-between}
+.byline{color:var(--ink-soft); margin:0}
+.byline a{color:var(--ink)}
+.lede{font-size:1.25rem; margin:20px 0 0; max-width:48ch}
+
+/* pictures */
+.shot{margin:0}
+.shot img,.shot video{display:block; width:100%; height:auto; border-radius:6px; border:1px solid var(--rule); background:var(--bg-raised)}
+.shot figcaption{color:var(--ink-soft); font-size:.9375rem; margin-top:8px}
+.ph{
+  aspect-ratio:16/9; border:1.5px dashed var(--rule); border-radius:6px; background:var(--bg-raised);
+  display:flex; align-items:center; justify-content:center; text-align:center; padding:16px;
+  color:var(--ink-soft); font-size:.9375rem;
+}
+.ph b{display:block; color:var(--ink); font-family:"Zilla Slab",serif; font-size:1.125rem; margin-bottom:4px}
+.hero .shot{margin-top:32px}
+.gallery{display:grid; gap:24px}
+@media (min-width:760px){.gallery.two{grid-template-columns:1fr 1fr}}
+@media (min-width:760px){.gallery.feature{grid-template-columns:1fr 1fr} .gallery.feature .wide{grid-column:1/-1}}
+
+section{padding:72px 0 8px}
+.sec-head{display:grid; gap:14px; margin-bottom:32px}
+.sec-head p{font-size:1.1875rem; color:var(--ink-soft); max-width:58ch; margin:0}
+.split{display:grid; grid-template-columns:minmax(0,1fr); gap:40px}
+.split > *{min-width:0}
+@media (min-width:960px){.split{grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:56px}}
+
+.feats{display:grid; gap:26px}
+.feats h3{font-size:1.1875rem; margin-bottom:6px}
+.feats p{margin:0; color:var(--ink-soft)}
+
+figure.code{margin:0 0 28px}
+figure.code figcaption{color:var(--ink-soft); font-size:.9375rem; margin-bottom:8px}
+pre{margin:0; padding:16px 18px; background:var(--code-bg); border:1px solid var(--rule); border-radius:6px; overflow-x:auto;
+  font:400 .8125rem/1.6 "JetBrains Mono",ui-monospace,monospace; color:var(--ink); tab-size:2}
+.c{color:var(--ink-soft); font-style:italic} .k{color:var(--cyan)} .s{color:var(--gold)}
+
+table{border-collapse:collapse; width:100%; font-size:.9688rem}
+th,td{text-align:left; padding:8px 10px; border-bottom:1px solid var(--rule)}
+th{font-weight:700; color:var(--ink-soft)}
+td.num, th.num{text-align:right; font-variant-numeric:tabular-nums}
+
+/* movement demo */
+.demo{border:1px solid var(--rule); border-radius:6px; background:var(--bg-raised); overflow:hidden; margin-bottom:40px}
+.demo canvas{display:block; width:100%; height:auto; touch-action:none; cursor:crosshair}
+.demo-bar{display:flex; flex-wrap:wrap; gap:12px 20px; align-items:center; justify-content:space-between; padding:12px 14px; border-top:1px solid var(--rule)}
+.seg{display:flex; gap:6px; flex-wrap:wrap}
+.seg button,.btn{font:inherit; font-size:.9375rem; color:var(--ink); background:transparent; border:1px solid var(--rule); border-radius:4px; padding:6px 12px; cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--ink); color:var(--bg); border-color:var(--ink)}
+.seg button:hover,.btn:hover{border-color:var(--ink-soft)}
+.readout{display:flex; flex-wrap:wrap; gap:4px 18px; margin:0; color:var(--ink-soft); font-size:.9375rem}
+.readout div{display:flex; gap:6px}
+.readout dt{margin:0}
+.readout dd{margin:0; color:var(--ink); font-weight:700; font-variant-numeric:tabular-nums; min-width:4.5ch}
+.keys{padding:0 14px 12px; color:var(--ink-soft); font-size:.875rem; margin:0}
+kbd{font:500 .8125rem "JetBrains Mono",monospace; border:1px solid var(--rule); border-bottom-width:2px; border-radius:3px; padding:0 5px; color:var(--ink)}
+
+footer{padding:72px 0 56px; margin-top:64px; border-top:1px solid var(--rule)}
+.foot{display:grid; gap:32px}
+@media (min-width:720px){.foot{grid-template-columns:1.2fr 1fr}}
+.links{display:flex; flex-wrap:wrap; gap:10px 22px; margin-top:16px}
+.foot ul{margin:0; padding-left:1.1em; display:grid; gap:8px; color:var(--ink-soft)}
+
+/* ---------- site nav ---------- */
+.topnav{position:sticky; top:0; z-index:20; background:var(--bg); border-bottom:1px solid var(--rule)}
+.topnav .wrap{display:flex; align-items:center; justify-content:center; gap:12px; min-height:56px}
+.topnav .site{font:600 1.125rem/1 "Zilla Slab",Georgia,serif; color:var(--ink); text-decoration:none; white-space:nowrap}
+.tabs{display:flex; gap:4px}
+.tabs a{color:var(--ink-soft); text-decoration:none; padding:8px 12px; border-radius:4px; font-size:.9375rem; white-space:nowrap}
+.tabs a:hover{color:var(--ink)}
+.tabs a[aria-current="page"]{color:var(--ink); background:var(--bg-raised); box-shadow:inset 0 -2px 0 var(--gold)}
+h1.logo{margin:0; line-height:0}
+h1.logo img{display:block; width:clamp(260px,62vw,560px); height:auto; margin:0 auto}
+.hero-top{flex-direction:column; align-items:center; text-align:center}
+.hero .lede{margin-left:auto; margin-right:auto; text-align:center}
+
+/* item prompt demo */
+.prompt-stage{position:relative; border:1px solid var(--rule); border-radius:6px; overflow:hidden; min-height:300px;
+  display:flex; align-items:center; justify-content:center; padding:32px 16px; background:#0e1829 center/cover no-repeat}
+.prompt-stage::before{content:""; position:absolute; inset:0; background:rgba(8,14,26,.45)}
+.prompt{position:relative; width:min(340px,100%); border-radius:8px; color:#fff; background:rgba(6,10,20,.72); overflow:hidden;
+  transform-origin:center; transition:transform .2s cubic-bezier(.25,.46,.45,.94), opacity .2s; font-family:"Atkinson Hyperlegible",sans-serif}
+.prompt.out{transform:scaleX(0); opacity:0}
+.prompt .bgc{position:absolute; inset:0; opacity:.4}
+.prompt .row{position:relative; padding:10px 14px}
+.prompt .top{display:flex; justify-content:space-between; align-items:baseline; gap:12px; border-bottom:1px solid rgba(255,255,255,.18)}
+.prompt .nm{font-weight:700; font-size:1.125rem}
+.prompt .cls{font-size:.8125rem; opacity:.85}
+.prompt .qty{font-variant-numeric:tabular-nums; font-weight:700}
+.prompt .desc{font-size:.9375rem; min-height:3.2em}
+.prompt .bot{display:flex; justify-content:space-between; align-items:center; border-top:1px solid rgba(255,255,255,.18); font-size:.875rem}
+.prompt .key{display:inline-flex; align-items:center; gap:6px; opacity:.9}
+.prompt .key kbd{color:#fff; border-color:rgba(255,255,255,.5)}
+.prompt.fancy .tx{font-family:"Zilla Slab",Georgia,serif; -webkit-background-clip:text; background-clip:text; color:transparent}
+.prompt.legendary .tx{background-image:linear-gradient(180deg,#ffff00,#ffa500)}
+.prompt.cursed .tx{background-image:linear-gradient(180deg,#ee00ff,#4025ac)}
+.prompt.cursed .tx, .prompt.legendary .tx{font-weight:700}
+.rarities{display:flex; flex-wrap:wrap; gap:6px; margin:16px 0 0}
+.wip{color:var(--ink-soft); font-size:.9375rem; margin:12px 0 0}
+</style>
+</head>
+<body>
+<nav class="topnav" aria-label="Project Elysium pages">
+  <div class="wrap">
+    <div class="tabs">
+      <a href="index.html" aria-current="page">Gameplay and world</a>
+      <a href="systems.html">Server systems</a>
+    </div>
+  </div>
+</nav>
+
+
+<header class="hero wrap">
+  <div class="hero-top">
+    <h1 class="logo"><img src="media/logo.webp" width="1100" height="530" alt="Elysium: The Forsaken Dungeons"></h1>
+    <p class="byline">Movement, VFX and world by <a href="https://linkedin.com/in/donovan-faucette-26b183269">Donovan Faucette</a></p>
+  </div>
+  <p class="lede">A steampunk action RPG for Roblox, set after the world collapsed. I build how it moves, how its abilities look, and the places players explore.</p>
+  <figure class="shot">
+    <img src="media/courtyard.jpg" width="1800" height="1012" alt="An overgrown industrial courtyard: rusted yellow pillars and pipes wrapped in vines, a glowing blue teleport pad in front, and small white helper robots standing nearby.">
+    <figcaption>Old tech, taken back by the forest: an overgrown courtyard with a glowing pad and helper robots.</figcaption>
+  </figure>
+</header>
+
+<main>
+<section class="wrap" id="movement" aria-labelledby="h-move">
+  <div class="sec-head">
+    <h2 id="h-move">Movement system</h2>
+    <p>A client-side controller that replaces Roblox's instant start, stop and turn with momentum and weight, then drives motion-capture animation from the character's real speed.</p>
+  </div>
+
+  <div class="demo">
+    <canvas id="walk" width="1056" height="440" tabindex="0" aria-label="Movement demo. Use W A S D or the arrow keys to move, or hold the mouse or a finger on the floor to steer toward it."></canvas>
+    <div class="demo-bar">
+      <div class="seg" role="group" aria-label="Movement model">
+        <button type="button" data-model="weighted" aria-pressed="true">Weighted movement</button>
+        <button type="button" data-model="default" aria-pressed="false">Default Roblox</button>
+      </div>
+      <dl class="readout" id="readout" aria-live="off"></dl>
+    </div>
+    <p class="keys">Click the floor, then move with <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> or the arrow keys. Hold <kbd>Shift</kbd> to sprint, <kbd>X</kbd> to walk, <kbd>C</kbd> to crouch. On touch, hold a finger where you want to go. The blue line is the predicted path, the same one the game draws in Studio.</p>
+  </div>
+
+  <div class="split">
+    <div class="feats">
+      <div><h3>Weighted steering</h3>
+        <p>The character turns toward the stick at up to 240° a second and builds to speed over about 0.85 seconds. Sharp turns cost speed, and braking is capped so a sprint takes a couple of planted steps to stop instead of snapping to zero.</p></div>
+      <div><h3>Animation that matches the feet</h3>
+        <p>Idle, walk, jog and sprint loops are blended by measured ground speed. Every moving clip shares one gait phase, offset so the left heel lands at the same moment in each, so changing pace never pops the feet. Stop clips enter at the frame that best matches the current stride.</p></div>
+      <div><h3>Mocap drives the body</h3>
+        <p>Start and stop clips carry their recorded speed curves, and the controller follows them, so the body accelerates exactly as the capture did. Raw hip speed wobbles with each step, so the curves are smoothed to rise or fall in one motion.</p></div>
+      <div><h3>Jumps, landings and lean</h3>
+        <p>Jumps have a short takeoff before leaving the ground and limited air control. Hard landings slow the character briefly, and a sprint jump recovers to full speed over 1.5 seconds. The torso banks into turns and rocks back onto the heels when braking, up to 7°.</p></div>
+      <div><h3>Every input, every edge case</h3>
+        <p>Keyboard, gamepad and touch all work, keeping analog stick strength. Sprint and crouch toggle on stick clicks. Menus, text boxes and lost window focus cancel held modes, and slows from other systems are respected as a speed cap.</p></div>
+    </div>
+    <div>
+      <figure class="code">
+        <figcaption>Turning eases toward the input but never faster than the turn-rate cap.</figcaption>
+<pre><code><span class="k">local function</span> rotateToward(from, target, dt, maxRate)
+  <span class="k">local</span> angle = math.atan2(from:Cross(target).Y,
+    math.clamp(from:Dot(target), -<span class="s">1</span>, <span class="s">1</span>))
+  <span class="k">local</span> change = math.clamp(
+    angle * (<span class="s">1</span> - math.exp(-dt / number(<span class="s">"TurnResponse"</span>, <span class="s">0.16</span>, <span class="s">0.03</span>, <span class="s">0.6</span>))),
+    -maxRate * dt, maxRate * dt)
+  <span class="k">return</span> CFrame.fromAxisAngle(Vector3.yAxis, change)
+    :VectorToWorldSpace(from), change
+<span class="k">end</span></code></pre>
+      </figure>
+      <figure class="code">
+        <figcaption>Braking caps deceleration so the stop animation can carry the last step.</figcaption>
+<pre><code><span class="k">local</span> braking = <span class="k">not</span> stopSpeed <span class="k">and</span> desired &lt; speed - <span class="s">0.5</span>
+  <span class="k">and not</span> crouchLimit
+<span class="k">local</span> eased = speed + (desired - speed) * (<span class="s">1</span> - math.exp(-dt / response))
+<span class="k">if</span> braking <span class="k">then</span>
+  speed = math.max(eased,
+    speed - number(<span class="s">"BrakeDeceleration"</span>, <span class="s">30</span>, <span class="s">5</span>, <span class="s">200</span>) * dt)
+<span class="k">else</span>
+  speed = eased
+<span class="k">end</span></code></pre>
+      </figure>
+      <figure class="code">
+        <figcaption>Each loop is nudged back onto the shared gait phase so the feet stay in sync.</figcaption>
+<pre><code><span class="k">local</span> base = l.len * phaseVel
+<span class="k">local</span> want = wrap(self.phase + l.offset) * l.len
+<span class="k">local</span> err = want - l.track.TimePosition
+<span class="k">if</span> err &gt; l.len/<span class="s">2</span> <span class="k">then</span> err -= l.len
+<span class="k">elseif</span> err &lt; -l.len/<span class="s">2</span> <span class="k">then</span> err += l.len <span class="k">end</span>
+<span class="k">if</span> math.abs(err) &gt; l.len * <span class="s">.08</span> <span class="k">then</span>
+  l.track.TimePosition = want          <span class="c">-- far off: snap</span>
+  l.track:AdjustSpeed(base)
+<span class="k">else</span>
+  l.track:AdjustSpeed(math.max(<span class="s">0</span>, base + err * <span class="s">6</span>)) <span class="c">-- close: steer</span>
+<span class="k">end</span></code></pre>
+      </figure>
+      <table>
+        <thead><tr><th>Mode</th><th>Key</th><th class="num">Speed (studs/s)</th></tr></thead>
+        <tbody>
+          <tr><td>Sprint</td><td>Shift or L3</td><td class="num">18.0</td></tr>
+          <tr><td>Jog</td><td>Default</td><td class="num">11.9</td></tr>
+          <tr><td>Walk</td><td>X</td><td class="num">4.4</td></tr>
+          <tr><td>Crouch</td><td>C or R3</td><td class="num">3.4</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <figure class="shot" style="margin-top:40px">
+    <video src="media/movement.mp4" poster="media/movement-poster.jpg" width="1280" height="704" autoplay muted loop playsinline controls preload="metadata" aria-label="In-game clip of the character walking, speeding up to a jog and then running, with the trajectory line under their feet."></video>
+    <figcaption>In game: walk to jog to run with no foot pops, and the Studio trajectory line under the character.</figcaption>
+  </figure>
+</section>
+
+<section class="wrap" id="vfx" aria-labelledby="h-vfx">
+  <div class="sec-head">
+    <h2 id="h-vfx">Water ability VFX</h2>
+    <p>Stylized water effects for player abilities, built and tuned in a dedicated test place before they go into the game.</p>
+  </div>
+  <div class="gallery two">
+    <figure class="shot">
+      <video src="media/tornado.mp4" poster="media/tornado-poster.jpg" width="1280" height="720" autoplay muted loop playsinline controls preload="metadata" aria-label="A water tornado rising from a pool on the ground next to the player character."></video>
+      <figcaption>Water tornado: a pool forms at the player's feet, then twists up into a column with spray rings.</figcaption>
+    </figure>
+    <figure class="shot">
+      <img src="media/vfx.jpg" width="1600" height="899" alt="Water ability effects lined up on a test baseplate: a swirling vortex, a ripple, a breaking wave and a row of geysers.">
+      <figcaption>Abilities lined up in the test place: a vortex, a ripple, a tsunami wave and geysers.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section class="wrap" id="world" aria-labelledby="h-world">
+  <div class="sec-head">
+    <h2 id="h-world">World-building</h2>
+    <p>Humanity's technology turned against it, and nature has taken the ruins back. The look is 1850s Britain with obsolete, half-reclaimed tech.</p>
+  </div>
+  <div class="gallery two">
+    <figure class="shot">
+      <img src="media/village.jpg" width="1600" height="895" alt="Three timber-framed houses with glowing windows and mossy roofs, with a large fan and yellow industrial pipes running between them.">
+      <figcaption>Modular buildings for the first zone's village: timber-framed houses with leftover tech bolted on.</figcaption>
+    </figure>
+    <figure class="shot">
+      <video src="media/courtyard-motion.mp4" poster="media/courtyard-motion-poster.jpg" width="1280" height="714" autoplay muted loop playsinline controls preload="metadata" aria-label="The overgrown courtyard in motion, with drifting leaves and a crystal growth that shifts colors."></video>
+      <figcaption>The courtyard in motion: drifting leaves and a crystal growth that shifts color.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section class="wrap" id="prompts" aria-labelledby="h-prompts">
+  <div class="sec-head">
+    <h2 id="h-prompts">Item prompts</h2>
+    <p>Custom pickup prompts that replace Roblox's default prompt with a card showing the item, its class, quantity and rarity. This UI is a work in progress, so the design will change.</p>
+  </div>
+  <div class="split">
+    <div>
+      <div class="prompt-stage" id="promptStage">
+        <div class="prompt" id="prompt" aria-live="polite">
+          <div class="bgc" id="pBg"></div>
+          <div class="row top"><div><div class="nm tx" id="pName"></div><div class="cls tx" id="pClass"></div></div><div class="qty tx" id="pQty"></div></div>
+          <div class="row desc tx" id="pDesc"></div>
+          <div class="row bot"><span class="tx" id="pRarity"></span><span class="key"><kbd>E</kbd> Pick up</span></div>
+        </div>
+      </div>
+      <div class="rarities seg" role="group" aria-label="Rarity">
+        <button type="button" data-r="Common" aria-pressed="false">Common</button>
+        <button type="button" data-r="Uncommon" aria-pressed="false">Uncommon</button>
+        <button type="button" data-r="Rare" aria-pressed="true">Rare</button>
+        <button type="button" data-r="Legendary" aria-pressed="false">Legendary</button>
+        <button type="button" data-r="Cursed" aria-pressed="false">Cursed</button>
+        <button type="button" class="btn" id="pickup">Pick up</button>
+      </div>
+      <p class="wip">The items here are examples. In game, each prompt reads them from values stored on the prompt.</p>
+    </div>
+    <div>
+      <ul class="feats" style="list-style:none; padding:0; margin:0 0 28px">
+        <li><h3>One prompt, any item</h3><p>The card is cloned for each prompt in range and filled from values on the prompt: item name, class, quantity, description and rarity. Designers tag an item once and the UI follows.</p></li>
+        <li><h3>Rarity you can read at a glance</h3><p>Five rarities each set the card's color. Legendary items switch to a display font with a gold gradient. Cursed items get a violet gradient and scramble their text before revealing a message.</p></li>
+        <li><h3>Feedback on pickup</h3><p>Triggering the prompt collapses the card and fades the text out, then it eases back when released. Connections are cleaned up when the prompt leaves view.</p></li>
+      </ul>
+      <figure class="code">
+        <figcaption>Default-style prompts are left alone; custom ones get the Elysium card.</figcaption>
+<pre><code>ProximityPromptService.PromptShown:Connect(<span class="k">function</span>(prompt, inputType)
+  <span class="k">if</span> prompt.Style == Enum.ProximityPromptStyle.Default <span class="k">then</span>
+    <span class="k">return</span>
+  <span class="k">end</span>
+  prompt.MaxActivationDistance = <span class="s">40</span>
+  <span class="k">local</span> gui = getScreenGui()
+  <span class="k">local</span> cleanupFunction = createPrompt(prompt, inputType, gui)
+  prompt.PromptHidden:Wait()
+  cleanupFunction()
+<span class="k">end</span>)</code></pre>
+      </figure>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer class="wrap">
+  <div class="foot">
+    <div>
+      <h2 style="font-size:2rem">About the project</h2>
+      <table style="margin-top:20px">
+        <tbody>
+          <tr><td>Movement, VFX and world-building</td><td><a href="https://linkedin.com/in/donovan-faucette-26b183269">Donovan Faucette</a></td></tr>
+          <tr><td>Dungeon generation and server systems</td><td><a href="https://www.linkedin.com/in/sean-hill-77aa6923a/">Sean Hill</a></td></tr>
+        </tbody>
+      </table>
+      <div class="links">
+        <a href="https://github.com/faucetted0530">GitHub</a>
+        <a href="https://linkedin.com/in/donovan-faucette-26b183269">LinkedIn</a>
+      </div>
+    </div>
+    <div>
+      <h3 style="margin-bottom:12px">Coming next</h3>
+      <ul>
+        <li>A day and night cycle</li>
+        <li>Growing the first village into a town with alleyways and carriage roads</li>
+      </ul>
+    </div>
+  </div>
+</footer>
+
+<script>
+(() => {
+"use strict";
+/* Top-down port of WeightedMovement's grounded steering, braking, lean and trajectory preview. */
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const cv = document.getElementById("walk"), ctx = cv.getContext("2d");
+const PX = 9; // pixels per stud at 1056px width
+const SPEED = {Sprint: 18, Jog: 11.9121, Walk: 4.40585, Crouch: 3.39665};
+const TURN_RATE = 240 * Math.PI / 180, TURN_RESP = .16, ACCEL = .85, DECEL = .24, BRAKE = 30, LEAN_MAX = 7;
+let model = "weighted";
+const st = {x: 0, y: 0, hx: 1, hy: 0, speed: 0, turnVel: 0, bank: 0, trail: [], lastFoot: 0, foot: 1};
+const keys = new Set(); let pointer = null;
+
+function size() {
+  const w = cv.clientWidth || 1056, dpr = Math.min(devicePixelRatio || 1, 2);
+  cv.width = Math.round(w * dpr); cv.height = Math.round(w * (440 / 1056) * dpr);
+  if (!st.x) { st.x = cv.width / 2; st.y = cv.height / 2; }
+  st.x = Math.min(st.x, cv.width); st.y = Math.min(st.y, cv.height);
+}
+const scale = () => cv.width / 1056 * PX; // px per stud
+
+function rotateToward(hx, hy, tx, ty, dt, maxRate) {
+  const angle = Math.atan2(hx * ty - hy * tx, Math.max(-1, Math.min(1, hx * tx + hy * ty)));
+  let change = angle * (1 - Math.exp(-dt / TURN_RESP));
+  change = Math.max(-maxRate * dt, Math.min(maxRate * dt, change));
+  const c = Math.cos(change), s = Math.sin(change);
+  return [hx * c - hy * s, hx * s + hy * c, change];
+}
+
+function inputVec() {
+  let x = 0, y = 0;
+  if (keys.has("w") || keys.has("arrowup")) y -= 1;
+  if (keys.has("s") || keys.has("arrowdown")) y += 1;
+  if (keys.has("a") || keys.has("arrowleft")) x -= 1;
+  if (keys.has("d") || keys.has("arrowright")) x += 1;
+  if (pointer) {
+    const dx = pointer.x - st.x, dy = pointer.y - st.y, d = Math.hypot(dx, dy);
+    if (d > 6 * devicePixelRatio) { x = dx / d; y = dy / d; }
+  }
+  const m = Math.hypot(x, y);
+  return m > 1 ? [x / m, y / m, 1] : [x, y, m];
+}
+function mode() {
+  if (keys.has("c")) return "Crouch";
+  if (keys.has("x")) return "Walk";
+  if (keys.has("shift")) return "Sprint";
+  return "Jog";
+}
+
+function step(dt) {
+  const [ix, iy, mag] = inputVec(), m = mode(), limit = SPEED[m];
+  const moving = mag > .03;
+  const ux = moving ? ix / mag : 0, uy = moving ? iy / mag : 0;
+  if (model === "default") {
+    if (moving) { st.hx = ux; st.hy = uy; }
+    st.speed = moving ? limit * mag : 0; st.turnVel = 0;
+  } else {
+    let desired = 0;
+    if (moving) {
+      const sharp = Math.max(0, Math.min(1, (st.hx * ux + st.hy * uy + 1) / 2));
+      const [nx, ny, ch] = rotateToward(st.hx, st.hy, ux, uy, dt, TURN_RATE);
+      st.hx = nx; st.hy = ny;
+      st.turnVel += (ch / Math.max(dt, .001) - st.turnVel) * (1 - Math.exp(-dt / .12));
+      desired = limit * mag * (.42 + .58 * sharp);
+    } else st.turnVel *= Math.exp(-dt / .12);
+    const response = (moving ? ACCEL : DECEL) / 3;
+    const braking = desired < st.speed - .5 && m !== "Crouch";
+    const eased = st.speed + (desired - st.speed) * (1 - Math.exp(-dt / response));
+    st.speed = braking ? Math.max(eased, st.speed - BRAKE * dt) : eased;
+    if (st.speed < .025) st.speed = 0;
+  }
+  const s = scale();
+  st.x += st.hx * st.speed * s * dt; st.y += st.hy * st.speed * s * dt;
+  const pad = 14;
+  if (st.x < pad || st.x > cv.width - pad) { st.x = Math.max(pad, Math.min(cv.width - pad, st.x)); }
+  if (st.y < pad || st.y > cv.height - pad) { st.y = Math.max(pad, Math.min(cv.height - pad, st.y)); }
+  // lean: bank into the turn, scaled by how fast we're going
+  const amount = Math.min(1, st.speed / Math.max(limit, .1));
+  const target = Math.max(-1, Math.min(1, -st.turnVel * .25)) * LEAN_MAX * amount;
+  st.bank += (target - st.bank) * (1 - Math.exp(-dt / .16));
+  // footprints every ~half stride
+  st.lastFoot += st.speed * dt;
+  const stride = m === "Sprint" ? 2.4 : m === "Jog" ? 1.9 : 1.2;
+  if (st.lastFoot > stride && st.speed > .3) {
+    st.lastFoot = 0; st.foot *= -1;
+    const off = .7 * s * st.foot;
+    st.trail.push({x: st.x - st.hy * off, y: st.y + st.hx * off, a: Math.atan2(st.hy, st.hx), t: performance.now()});
+    if (st.trail.length > 40) st.trail.shift();
+  }
+  return {limit, moving, ux, uy, mag, m};
+}
+
+function predict(info) {
+  // mirrors updatePath: 9 segments over 1.4 s
+  const pts = [[st.x, st.y]];
+  if (!info.moving && st.speed < .1) return pts;
+  let hx = st.hx, hy = st.hy, x = st.x, y = st.y;
+  const tx = info.moving ? info.ux : hx, ty = info.moving ? info.uy : hy;
+  let fs = Math.max(st.speed, info.limit * .3);
+  const stepT = 1.4 / 9, s = scale();
+  for (let i = 0; i < 9; i++) {
+    let nx = hx, ny = hy;
+    if (model === "weighted") [nx, ny] = rotateToward(hx, hy, tx, ty, stepT, TURN_RATE); else { nx = tx; ny = ty; }
+    fs += (info.limit * Math.min(info.mag, 1) - fs) * (1 - Math.exp(-stepT / .4));
+    let ax = hx + nx, ay = hy + ny; const am = Math.hypot(ax, ay) || 1;
+    x += ax / am * Math.max(fs, .2) * stepT * s; y += ay / am * Math.max(fs, .2) * stepT * s;
+    pts.push([x, y]); hx = nx; hy = ny;
+  }
+  return pts;
+}
+
+function draw(info) {
+  const W = cv.width, H = cv.height, s = scale();
+  const C = {bg: css("--bg-raised"), grid: css("--grid"), ink: css("--ink"), soft: css("--ink-soft"), brass: css("--gold"), beam: css("--beam"), rust: css("--copper")};
+  ctx.fillStyle = C.bg; ctx.fillRect(0, 0, W, H);
+  const g = 4 * s; ctx.strokeStyle = C.grid; ctx.lineWidth = 1; ctx.beginPath();
+  for (let x = (W / 2) % g; x < W; x += g) { ctx.moveTo(x + .5, 0); ctx.lineTo(x + .5, H); }
+  for (let y = (H / 2) % g; y < H; y += g) { ctx.moveTo(0, y + .5); ctx.lineTo(W, y + .5); }
+  ctx.stroke();
+  // footprints
+  const now = performance.now();
+  for (const f of st.trail) {
+    const age = (now - f.t) / 3000; if (age > 1) continue;
+    ctx.save(); ctx.translate(f.x, f.y); ctx.rotate(f.a); ctx.globalAlpha = .55 * (1 - age);
+    ctx.fillStyle = C.soft; ctx.beginPath(); ctx.ellipse(0, 0, s * .45, s * .2, 0, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+  }
+  ctx.globalAlpha = 1;
+  // trajectory
+  const pts = predict(info);
+  if (pts.length > 1) {
+    ctx.strokeStyle = C.beam; ctx.lineWidth = Math.max(2, s * .22); ctx.lineCap = "round"; ctx.lineJoin = "round";
+    ctx.beginPath(); ctx.moveTo(...pts[0]); for (const p of pts.slice(1)) ctx.lineTo(...p); ctx.stroke();
+    ctx.fillStyle = C.beam; for (const p of pts.slice(1)) { ctx.beginPath(); ctx.arc(p[0], p[1], Math.max(2, s * .18), 0, Math.PI * 2); ctx.fill(); }
+  }
+  // pointer target
+  if (pointer) { ctx.strokeStyle = C.soft; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(pointer.x, pointer.y, s * .6, 0, Math.PI * 2); ctx.stroke(); }
+  // character: body squashes sideways with lean
+  const a = Math.atan2(st.hy, st.hx), r = s * 1.6, crouch = info.m === "Crouch" ? .82 : 1;
+  ctx.save(); ctx.translate(st.x, st.y); ctx.rotate(a);
+  ctx.fillStyle = C.brass; ctx.strokeStyle = C.ink; ctx.lineWidth = Math.max(1.5, s * .12);
+  ctx.beginPath(); ctx.ellipse(0, st.bank / LEAN_MAX * r * .35, r * .75 * crouch, r * crouch, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = C.ink; ctx.beginPath(); ctx.moveTo(r * 1.25, 0); ctx.lineTo(r * .45, -r * .42); ctx.lineTo(r * .45, r * .42); ctx.closePath(); ctx.fill();
+  ctx.restore();
+}
+
+function readout(info) {
+  const items = [["Mode", info.m], ["Speed", st.speed.toFixed(1) + " studs/s"], ["Lean", Math.abs(st.bank).toFixed(1) + "°"]];
+  document.getElementById("readout").innerHTML = items.map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join("");
+}
+
+let last = performance.now(), frame = 0;
+function loop(now) {
+  const dt = Math.min(.05, (now - last) / 1000); last = now;
+  const info = step(dt); draw(info);
+  if (frame++ % 6 === 0) readout(info);
+  requestAnimationFrame(loop);
+}
+
+// input: keyboard only while the demo has focus, so page scrolling still works
+const handled = new Set(["w","a","s","d","arrowup","arrowdown","arrowleft","arrowright","shift","x","c"]);
+cv.addEventListener("keydown", e => { const k = e.key.toLowerCase(); if (handled.has(k)) { keys.add(k); e.preventDefault(); } });
+cv.addEventListener("keyup", e => keys.delete(e.key.toLowerCase()));
+cv.addEventListener("blur", () => { keys.clear(); pointer = null; });
+const toCanvas = e => { const r = cv.getBoundingClientRect(); return {x: (e.clientX - r.left) * cv.width / r.width, y: (e.clientY - r.top) * cv.height / r.height}; };
+cv.addEventListener("pointerdown", e => { cv.focus(); cv.setPointerCapture(e.pointerId); pointer = toCanvas(e); });
+cv.addEventListener("pointermove", e => { if (pointer) pointer = toCanvas(e); });
+const up = () => { pointer = null; }; cv.addEventListener("pointerup", up); cv.addEventListener("pointercancel", up);
+
+document.querySelectorAll("[data-model]").forEach(b => b.addEventListener("click", () => {
+  model = b.dataset.model;
+  document.querySelectorAll("[data-model]").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
+}));
+let rt; addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(size, 120); });
+
+size();
+// a short scripted run on load so the demo shows itself; skipped with reduced motion
+if (!reduced) {
+  const script = [[0, "d"], [900, "s"], [1500, null], [2300, null]];
+  script.forEach(([t, k], i) => setTimeout(() => {
+    if (document.activeElement === cv) return;
+    keys.clear(); if (k) keys.add(k);
+  }, t));
+}
+requestAnimationFrame(loop);
+
+// videos: no autoplay with reduced motion; pause when scrolled away
+const vids = document.querySelectorAll("video");
+if (reduced) vids.forEach(v => { v.removeAttribute("autoplay"); v.pause(); });
+else if ("IntersectionObserver" in window) {
+  const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) e.target.play().catch(() => {}); else e.target.pause(); }), {threshold: .25});
+  vids.forEach(v => io.observe(v));
+}
+})();
+
+/* item prompt demo (port of customProximityPrompts) */
+(() => {
+  const RARITY = {Common:[58,58,58], Uncommon:[90,204,18], Rare:[8,127,255], Legendary:[227,202,9], Cursed:[171,26,255]};
+  const ITEMS = {
+    Common: ["Scrap gear","Material","x3","Salvaged from the old machines. Useful for repairs."],
+    Uncommon: ["Health tonic","Consumable","x2","Restores a little health. Tastes like copper."],
+    Rare: ["Arc pistol","Weapon","x1","Fires charged bolts that arc between nearby enemies."],
+    Legendary: ["Clockwork gauntlets","Armor","x1","Forged before the collapse. The gears still turn."],
+    Cursed: ["Hollow crown","Cards","x1","Something inside it is still listening."],
+  };
+  const el = id => document.getElementById(id);
+  const card = el("prompt"), fields = ["pName","pClass","pQty","pDesc","pRarity"].map(el);
+  const stage = el("promptStage");
+  const heroImg = document.querySelector(".hero figure img");
+  if (heroImg) stage.style.backgroundImage = `url(${heroImg.src})`;
+  const reducedP = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  let timers = [];
+  const scramble = t => { const a = [...t]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a.join(""); };
+  function show(r) {
+    timers.forEach(clearTimeout); timers.forEach(clearInterval); timers = [];
+    const [n, c, q, d] = ITEMS[r], vals = [n, c, q, d, r];
+    fields.forEach((f, i) => f.textContent = vals[i]);
+    el("pBg").style.background = `rgb(${RARITY[r].join(",")})`;
+    card.className = "prompt" + (r === "Legendary" ? " fancy legendary" : r === "Cursed" ? " fancy cursed" : "");
+    document.querySelectorAll("[data-r]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.r === r)));
+    if (r === "Cursed" && !reducedP) {
+      // each line waits 1-5 s, scrambles for a few seconds, then the description reveals the message
+      fields.forEach((f, i) => {
+        const orig = vals[i];
+        timers.push(setTimeout(() => {
+          const iv = setInterval(() => f.textContent = scramble(orig), 100); timers.push(iv);
+          timers.push(setTimeout(() => { clearInterval(iv); f.textContent = i === 3 ? "May cursed energy flow through you." : orig; }, 3000));
+        }, 1000 + Math.random() * 4000));
+      });
+    } else if (r === "Cursed") fields[3].textContent = "May cursed energy flow through you.";
+  }
+  function pickup() { card.classList.add("out"); setTimeout(() => card.classList.remove("out"), 700); }
+  document.querySelectorAll("[data-r]").forEach(b => b.addEventListener("click", () => show(b.dataset.r)));
+  el("pickup").addEventListener("click", pickup);
+  stage.tabIndex = 0; stage.setAttribute("aria-label", "Item prompt preview. Press E to pick up.");
+  stage.addEventListener("keydown", e => { if (e.key.toLowerCase() === "e") { pickup(); e.preventDefault(); } });
+  show("Rare");
+})();
+</script>
+</body>
+</html>

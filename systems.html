@@ -1,0 +1,806 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Project Elysium Systems</title>
+<meta name="description" content="Backend systems for Project Elysium, a Roblox action RPG, built by Sean Hill: procedural dungeon generation, server inventory, and weighted loot.">
+<link rel="canonical" href="https://elysiumforsakendungeons.online/systems.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Elysium: The Forsaken Dungeons">
+<meta property="og:title" content="Elysium: The Forsaken Dungeons | Server systems">
+<meta property="og:description" content="Backend systems for Project Elysium, a Roblox action RPG, built by Sean Hill: procedural dungeon generation, server inventory, and weighted loot.">
+<meta property="og:url" content="https://elysiumforsakendungeons.online/systems.html">
+<meta property="og:image" content="https://elysiumforsakendungeons.online/og-image.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="627">
+<meta property="og:image:alt" content="The Elysium: The Forsaken Dungeons logo over an overgrown courtyard">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Zilla+Slab:wght@500;600;700&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0e1829; --bg-raised:#152340; --ink:#f1e9d6; --ink-soft:#a7b1c4; --rule:#2a3c5e;
+  --gold:#f2aa33; --cyan:#4fd6f2; --copper:#d0743a; --grid:#1a2a47; --code-bg:#0a1220;
+  --focus:#ffd27a; --beam:#4fd6f2; color-scheme:dark;
+}
+@media (prefers-color-scheme: light){
+  :root:not([data-theme="dark"]){
+    --bg:#f2ece0; --bg-raised:#e8e0cf; --ink:#14213a; --ink-soft:#4a5670; --rule:#cdc3ae;
+    --gold:#9a6406; --cyan:#0e7891; --copper:#a3511e; --grid:#e1d8c5; --code-bg:#f8f4ea;
+    --focus:#9a6406; --beam:#0e7891; color-scheme:light;
+}
+}
+:root[data-theme="light"]{
+    --bg:#f2ece0; --bg-raised:#e8e0cf; --ink:#14213a; --ink-soft:#4a5670; --rule:#cdc3ae;
+    --gold:#9a6406; --cyan:#0e7891; --copper:#a3511e; --grid:#e1d8c5; --code-bg:#f8f4ea;
+    --focus:#9a6406; --beam:#0e7891; color-scheme:light;
+}
+
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font:400 1.0625rem/1.6 "Atkinson Hyperlegible",system-ui,sans-serif;
+}
+a{color:var(--gold); text-underline-offset:3px}
+a:hover{text-decoration-thickness:2px}
+:focus-visible{outline:2px solid var(--focus); outline-offset:3px; border-radius:2px}
+
+.wrap{max-width:1120px; margin:0 auto; padding:0 16px}
+@media (min-width:720px){.wrap{padding:0 32px}}
+
+h1,h2,h3{font-family:"Zilla Slab",Georgia,serif; line-height:1.1; margin:0}
+h1{font-size:clamp(3rem,9vw,6.25rem); font-weight:700; letter-spacing:-.01em}
+h2{font-size:clamp(2rem,4.5vw,2.75rem); font-weight:600}
+h3{font-size:1.375rem; font-weight:600}
+p{margin:0 0 1em}
+.measure{max-width:64ch}
+
+/* ---------- hero ---------- */
+.hero{padding-top:40px; padding-bottom:24px}
+.hero-top{display:flex; flex-wrap:wrap; gap:8px 32px; align-items:end; justify-content:space-between}
+.byline{color:var(--ink-soft); margin:0}
+.byline a{color:var(--ink)}
+.lede{font-size:1.25rem; margin:20px 0 0; max-width:46ch}
+
+.map{
+  margin-top:32px; border:1px solid var(--rule); background:var(--bg-raised);
+  border-radius:6px; overflow:hidden;
+}
+.map canvas{display:block; width:100%; height:auto}
+.map-bar{
+  display:flex; flex-wrap:wrap; gap:12px 20px; align-items:center; justify-content:space-between;
+  padding:12px 14px; border-top:1px solid var(--rule);
+}
+.stages{display:flex; flex-wrap:wrap; gap:6px}
+.stages button, .btn{
+  font:inherit; font-size:.9375rem; color:var(--ink); background:transparent;
+  border:1px solid var(--rule); border-radius:4px; padding:6px 12px; cursor:pointer;
+}
+.stages button[aria-pressed="true"]{background:var(--ink); color:var(--bg); border-color:var(--ink)}
+.stages button:hover, .btn:hover{border-color:var(--ink-soft)}
+.btn.primary{background:var(--gold); color:var(--bg); border-color:var(--gold); font-weight:700}
+.btn.primary:hover{filter:brightness(1.08)}
+.stats{display:flex; flex-wrap:wrap; gap:4px 18px; margin:0; color:var(--ink-soft); font-size:.9375rem}
+.stats div{display:flex; gap:6px}
+.stats dt{margin:0}
+.stats dd{margin:0; color:var(--ink); font-variant-numeric:tabular-nums; font-weight:700}
+.legend{display:flex; flex-wrap:wrap; gap:6px 18px; padding:0 14px 12px; color:var(--ink-soft); font-size:.875rem}
+.legend span{display:inline-flex; align-items:center; gap:7px}
+.sw{width:14px; height:4px; border-radius:2px; display:inline-block}
+.sw.box{height:12px; width:12px; border-radius:2px}
+.map-note{color:var(--ink-soft); font-size:.9375rem; margin:12px 0 0}
+
+/* ---------- sections ---------- */
+section{padding:72px 0 8px}
+.sec-head{display:grid; gap:14px; margin-bottom:32px}
+.sec-head p{font-size:1.1875rem; color:var(--ink-soft); max-width:58ch; margin:0}
+.split{display:grid; grid-template-columns:minmax(0,1fr); gap:40px}
+.split > *{min-width:0}
+@media (min-width:960px){.split{grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:56px}}
+
+ol.steps{list-style:none; counter-reset:s; margin:0; padding:0; display:grid; gap:22px}
+ol.steps li{counter-increment:s; display:grid; grid-template-columns:2.25rem 1fr; gap:4px 12px}
+ol.steps li::before{
+  content:counter(s); grid-row:span 2; font:600 1.5rem/1 "Zilla Slab",serif; color:var(--gold);
+  padding-top:2px;
+}
+ol.steps h3{font-size:1.1875rem}
+ol.steps p{margin:0; color:var(--ink-soft)}
+
+.decision{
+  border-left:3px solid var(--cyan); padding:4px 0 4px 18px; margin:36px 0 0;
+}
+.decision h3{margin-bottom:8px}
+.decision p{color:var(--ink-soft); margin:0}
+
+figure{margin:0 0 28px}
+figcaption{color:var(--ink-soft); font-size:.9375rem; margin-bottom:8px}
+pre{
+  margin:0; padding:16px 18px; background:var(--code-bg); border:1px solid var(--rule);
+  border-radius:6px; overflow-x:auto; font:400 .8125rem/1.6 "JetBrains Mono",ui-monospace,monospace;
+  color:var(--ink); tab-size:2;
+}
+.c{color:var(--ink-soft); font-style:italic}
+.k{color:var(--cyan)}
+.s{color:var(--gold)}
+
+table{border-collapse:collapse; width:100%; font-size:.9688rem}
+th,td{text-align:left; padding:8px 10px; border-bottom:1px solid var(--rule)}
+th{font-weight:700; color:var(--ink-soft)}
+td.num, th.num{text-align:right; font-variant-numeric:tabular-nums}
+
+ul.points{margin:0 0 24px; padding-left:1.1em; display:grid; gap:10px}
+ul.points li::marker{color:var(--gold)}
+
+/* ---------- inventory bench ---------- */
+.bench{border:1px solid var(--rule); border-radius:6px; background:var(--bg-raised); padding:18px}
+.bench h3{margin-bottom:4px}
+.bench-sub{color:var(--ink-soft); font-size:.9375rem; margin:0 0 16px}
+.slots{display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:8px}
+.slot{
+  position:relative; aspect-ratio:1/1; border:1px dashed var(--rule); border-radius:4px;
+  display:flex; flex-direction:column; justify-content:space-between; padding:7px;
+  font-size:.8125rem; line-height:1.25; background:transparent; color:var(--ink); text-align:left;
+  font-family:inherit;
+}
+.slot.full{border-style:solid; border-color:var(--ink-soft); background:var(--bg); cursor:pointer}
+.slot.full:hover{border-color:var(--copper)}
+.slot .nm{font-weight:700; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical}
+.slot .qty{font-variant-numeric:tabular-nums; color:var(--ink-soft)}
+.slot .bar{height:3px; background:var(--rule); border-radius:2px; overflow:hidden}
+.slot .bar i{display:block; height:100%; background:var(--cyan)}
+.slot.flash{animation:flash .6s ease-out}
+@keyframes flash{from{box-shadow:0 0 0 2px var(--gold)} to{box-shadow:0 0 0 0 transparent}}
+.controls{display:flex; flex-wrap:wrap; gap:8px; margin:16px 0}
+.log{
+  margin:0; padding:0; list-style:none; font-size:.9063rem; min-height:4.8em;
+  border-top:1px solid var(--rule); padding-top:12px; display:grid; gap:6px;
+}
+.log li{color:var(--ink-soft)}
+.log li:first-child{color:var(--ink)}
+.log b{color:var(--gold); font-weight:700}
+.log .lost{color:var(--copper)}
+
+/* ---------- loot ---------- */
+.weights{display:flex; height:44px; border-radius:4px; overflow:hidden; border:1px solid var(--rule); margin:8px 0 6px}
+.weights div{display:flex; align-items:center; padding:0 10px; font-size:.875rem; font-weight:700; color:var(--bg); white-space:nowrap; overflow:hidden}
+.ranges{display:flex; font-size:.8125rem; color:var(--ink-soft); margin-bottom:24px}
+.ranges span{padding-left:2px}
+.sim-table td:nth-child(2), .sim-table td:nth-child(3){font-variant-numeric:tabular-nums}
+
+/* ---------- footer ---------- */
+footer{padding:72px 0 56px; margin-top:64px; border-top:1px solid var(--rule)}
+.foot{display:grid; gap:32px}
+@media (min-width:720px){.foot{grid-template-columns:1.2fr 1fr}}
+.foot ul{margin:0; padding-left:1.1em; display:grid; gap:8px; color:var(--ink-soft)}
+.links{display:flex; flex-wrap:wrap; gap:10px 22px; margin-top:12px}
+
+@media (prefers-reduced-motion: reduce){ .slot.flash{animation:none} }
+
+/* ---------- site nav ---------- */
+.topnav{position:sticky; top:0; z-index:20; background:var(--bg); border-bottom:1px solid var(--rule)}
+.topnav .wrap{display:flex; align-items:center; justify-content:center; gap:12px; min-height:56px}
+.topnav .site{font:600 1.125rem/1 "Zilla Slab",Georgia,serif; color:var(--ink); text-decoration:none; white-space:nowrap}
+.tabs{display:flex; gap:4px}
+.tabs a{color:var(--ink-soft); text-decoration:none; padding:8px 12px; border-radius:4px; font-size:.9375rem; white-space:nowrap}
+.tabs a:hover{color:var(--ink)}
+.tabs a[aria-current="page"]{color:var(--ink); background:var(--bg-raised); box-shadow:inset 0 -2px 0 var(--gold)}
+h1.logo{margin:0; line-height:0}
+h1.logo img{display:block; width:clamp(260px,62vw,560px); height:auto; margin:0 auto}
+.hero-top{flex-direction:column; align-items:center; text-align:center}
+.hero .lede{margin-left:auto; margin-right:auto; text-align:center}
+.shot{margin:0 0 40px}
+.shot video{display:block; width:100%; height:auto; border-radius:6px; border:1px solid var(--rule); background:var(--bg-raised)}
+.shot figcaption{color:var(--ink-soft); font-size:.9375rem; margin-top:8px}
+</style>
+</head>
+<body>
+<nav class="topnav" aria-label="Project Elysium pages">
+  <div class="wrap">
+    <div class="tabs">
+      <a href="index.html">Gameplay and world</a>
+      <a href="systems.html" aria-current="page">Server systems</a>
+    </div>
+  </div>
+</nav>
+
+
+<header class="hero wrap">
+  <div class="hero-top">
+    <h1 class="logo"><img src="media/logo.webp" width="1100" height="530" alt="Elysium: The Forsaken Dungeons"></h1>
+    <p class="byline">Server systems by <a href="https://www.linkedin.com/in/sean-hill-77aa6923a/">Sean Hill</a></p>
+  </div>
+  <p class="lede">The backend of a Roblox action RPG: procedural dungeons, a server-owned inventory, and weighted loot drops. Written in Luau.</p>
+
+  <div class="map" aria-label="Interactive dungeon generator">
+    <canvas id="map" width="1056" height="616" role="img" aria-label="A generated dungeon map showing rooms, triangulation, spanning tree and corridors"></canvas>
+    <div class="map-bar">
+      <div class="stages" role="group" aria-label="Show generation step">
+        <button type="button" data-stage="1">Rooms</button>
+        <button type="button" data-stage="2">Triangulation</button>
+        <button type="button" data-stage="3">Spanning tree</button>
+        <button type="button" data-stage="4" aria-pressed="true">Corridors</button>
+      </div>
+      <button type="button" class="btn primary" id="regen">Generate a new dungeon</button>
+    </div>
+    <div class="legend" aria-hidden="true">
+      <span><i class="sw box" style="background:var(--gold)"></i>Start room</span>
+      <span><i class="sw box" style="background:var(--copper)"></i>Boss room (farthest from start)</span>
+      <span><i class="sw" style="background:var(--ink-soft)"></i>Triangulation</span>
+      <span><i class="sw" style="background:var(--gold)"></i>Spanning tree</span>
+      <span><i class="sw" style="background:var(--copper)"></i>Extra loop</span>
+      <span><i class="sw box" style="background:var(--cyan)"></i>Corridor tile</span>
+    </div>
+  </div>
+  <p class="map-note">This is a JavaScript port of the in-game generator, scaled down to 26 rooms. It runs the same steps as the Luau version, so every click builds a new dungeon.</p>
+  <dl class="stats" id="stats" aria-live="polite"></dl>
+</header>
+
+<main>
+<section class="wrap" id="dungeons" aria-labelledby="h-dungeons">
+  <div class="sec-head">
+    <h2 id="h-dungeons">Dungeon generation</h2>
+    <p>Each run places 100 rooms on a grid and turns them into one connected dungeon in six steps, entirely on the server.</p>
+  </div>
+  <figure class="shot">
+    <video src="media/dungeon.mp4" poster="media/dungeon-poster.jpg" width="640" height="360" autoplay muted loop playsinline controls preload="metadata" aria-label="Studio recording of a dungeon generating: rooms appear across the floor, corridors are carved between them, then the corridors are merged into larger hallway pieces."></video>
+    <figcaption>The real generator in Studio: rooms are placed, corridors are carved between them, then straight runs merge into larger hallway pieces.</figcaption>
+  </figure>
+  <div class="split">
+    <div>
+      <ol class="steps">
+        <li><h3>Place rooms on a 36-stud grid</h3>
+          <p>Rooms land on random grid cells, and overlaps are rejected with <code>GetPartBoundsInBox</code>. Each room opens one of its four doors at random. The first room is the start; the room farthest from it becomes the boss room.</p></li>
+        <li><h3>Triangulate the doors</h3>
+          <p>An incremental Delaunay triangulation (Bowyer–Watson) connects door positions. Points are inserted in x order, so triangles whose circumcircle falls behind the sweep are finished early instead of being re-tested. Coordinates are normalized to a unit square to keep the circle math stable.</p></li>
+        <li><h3>Filter, then repair connectivity</h3>
+          <p>Skinny triangles and edges longer than 12 cells are dropped. Union–find tracks which rooms are still connected and reconnects any that were cut off using the shortest discarded edges. Both limits are Studio attributes, so they can be tuned without touching code.</p></li>
+        <li><h3>Build a spanning tree, then add loops</h3>
+          <p>Prim's algorithm on a binary min-heap picks the shortest set of connections. Edges that lead back to visited rooms get a 1-in-10 chance to stay, up to 11, so players get loops instead of a strict tree.</p></li>
+        <li><h3>Carve the corridors</h3>
+          <p>For each connection, a greedy best-first search walks the grid and spawns hallway blocks. Rooms block the search; touching an existing hallway reuses it, so corridors merge into shared halls.</p></li>
+        <li><h3>Merge pieces and furnish rooms</h3>
+          <p>A depth-first walk over the hallway graph merges straight runs of 2–4 blocks into longer prefab halls and 2×2 clusters into large chambers. A room setter then places the shop and assigns ambush, easy, trap and mini-boss rooms from prefab pools.</p></li>
+      </ol>
+
+      <div class="decision">
+        <h3>Why greedy search instead of A*</h3>
+        <p>The earlier pathfinder was A*, ordering cells by distance travelled plus distance left. Ordering by distance left alone explores far fewer cells per corridor. The trade-off is that corridors aren't always the shortest route, which suits a dungeon. Both versions use the same custom heap, so the switch was one comparison.</p>
+      </div>
+    </div>
+
+    <div>
+      <figure>
+        <figcaption>Sweep step of the triangulation: finished triangles are retired without a circle test.</figcaption>
+<pre><code><span class="k">for</span> i = #active, <span class="s">1</span>, -<span class="s">1</span> <span class="k">do</span>
+  <span class="k">local</span> t = active[i]
+  <span class="k">local</span> remove = <span class="k">false</span>
+  <span class="c">-- X-sorted insertion: completed circles</span>
+  <span class="c">-- cannot contain future points.</span>
+  <span class="k">if</span> t.right &lt; v.x - <span class="s">1e-12</span> <span class="k">then</span>
+    finish(t); remove = <span class="k">true</span>
+  <span class="k">else</span>
+    <span class="k">local</span> dx, dz = v.x-t.x, v.z-t.z
+    <span class="k">if</span> dx*dx+dz*dz &lt;= t.radius2+tolerance <span class="k">then</span>
+      edge(t[<span class="s">1</span>],t[<span class="s">2</span>]); edge(t[<span class="s">2</span>],t[<span class="s">3</span>]); edge(t[<span class="s">3</span>],t[<span class="s">1</span>])
+      remove = <span class="k">true</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+  <span class="k">if</span> remove <span class="k">then</span>
+    active[i] = active[#active]; active[#active] = <span class="k">nil</span>
+  <span class="k">end</span>
+<span class="k">end</span></code></pre>
+      </figure>
+
+      <figure>
+        <figcaption>Prim's algorithm keeps a few edges back to visited rooms to create loops.</figcaption>
+<pre><code><span class="k">for</span> _, newEdge <span class="k">in</span> ipairs(graph[to]) <span class="k">do</span>
+  <span class="k">local</span> ranNum = math.random(<span class="s">1</span>,<span class="s">10</span>)
+  <span class="k">if not</span> visited[newEdge.endnode] <span class="k">then</span>
+    pq:Enqueue(newEdge)
+  <span class="k">elseif</span> newEdge.endnode ~= from
+     <span class="k">and</span> ranNum == <span class="s">1</span> <span class="k">and</span> #randomLines &lt; <span class="s">11</span> <span class="k">then</span>
+    table.insert(randomLines, {From = newEdge.startnode,
+      To = newEdge.endnode, Distance = newEdge.distance})
+  <span class="k">end</span>
+<span class="k">end</span></code></pre>
+      </figure>
+
+      <figure>
+        <figcaption>The pathfinder's heap orders cells by the Manhattan heuristic only, which makes it greedy.</figcaption>
+<pre><code><span class="k">local function</span> GetHeuristic(posA, posB)
+  <span class="k">return</span> math.abs(posA.X - posB.X)
+       + math.abs(posA.Z - posB.Z)
+<span class="k">end</span>
+
+<span class="k">function</span> PathPQ3:_heapifyUp(index)
+  <span class="k">while</span> index &gt; <span class="s">1</span> <span class="k">do</span>
+    <span class="k">local</span> parent = math.floor(index / <span class="s">2</span>)
+    <span class="k">if</span> self.heap[parent]:GetHcost()
+       &lt;= self.heap[index]:GetHcost() <span class="k">then break end</span>
+    self.heap[parent], self.heap[index] =
+      self.heap[index], self.heap[parent]
+    index = parent
+  <span class="k">end</span>
+<span class="k">end</span></code></pre>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<section class="wrap" id="inventory" aria-labelledby="h-inv">
+  <div class="sec-head">
+    <h2 id="h-inv">Inventory</h2>
+    <p>Every player's items live in one server-side table keyed by player. Clients can only ask for a copy, so they never edit their own inventory.</p>
+  </div>
+  <div class="split">
+    <div>
+      <ul class="points">
+        <li>Each stack records an item id, a quantity, a stack limit from the item's data, and a stack id.</li>
+        <li>Adding items tops up a matching stack first. Anything over the limit spills into new stacks, and whatever can't fit once the stack cap is reached is reported as lost.</li>
+        <li>Item ids are validated before anything changes: they must be strings in the <code>0x…</code> format.</li>
+        <li>New players start with four default moves and a starter item. Saving between sessions with DataStores is the next step.</li>
+      </ul>
+      <table>
+        <thead><tr><th>Item type</th><th class="num">Max per stack</th></tr></thead>
+        <tbody>
+          <tr><td>Consumable</td><td class="num">10</td></tr>
+          <tr><td>Moves</td><td class="num">5</td></tr>
+          <tr><td>Armor</td><td class="num">1</td></tr>
+          <tr><td>Weapon</td><td class="num">1</td></tr>
+          <tr><td>Cards</td><td class="num">1</td></tr>
+        </tbody>
+      </table>
+      <figure style="margin-top:28px">
+        <figcaption>The overflow path in <code>UpdateInv</code>: fill the current stack, then open new ones while there's room.</figcaption>
+<pre><code><span class="k">local</span> canAdd = math.min(num, itemData.stackable - foundStack.quantity)
+foundStack.quantity += canAdd
+overflow -= canAdd
+
+<span class="k">while</span> overflow &gt; <span class="s">0</span> <span class="k">do</span>
+  <span class="k">if</span> playerInventory.LastStackID + <span class="s">1</span> &lt; invServer.MaxStack <span class="k">then</span>
+    <span class="k">local</span> stackSize = math.min(overflow, itemData.stackable)
+    InventoryServer.MakeStack(player, id, stackSize)
+    overflow -= stackSize
+  <span class="k">else</span>
+    print(<span class="s">"Inventory Full. You lost: "</span> .. overflow .. <span class="s">" "</span> .. itemData.name)
+    <span class="k">break</span>
+  <span class="k">end</span>
+<span class="k">end</span></code></pre>
+      </figure>
+    </div>
+
+    <div>
+      <div class="bench" id="bench">
+        <h3>Try the stacking rules</h3>
+        <p class="bench-sub">Ten stack slots. Click a stack to delete it. The item names here are examples.</p>
+        <div class="slots" id="slots"></div>
+        <div class="controls">
+          <button type="button" class="btn" data-add="0x3001" data-n="7">Add 7 health tonics</button>
+          <button type="button" class="btn" data-add="0x2101" data-n="1">Add brass gauntlets</button>
+          <button type="button" class="btn primary" id="chest">Open a chest</button>
+          <button type="button" class="btn" id="reset">Reset</button>
+        </div>
+        <ul class="log" id="log" aria-live="polite"></ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="wrap" id="loot" aria-labelledby="h-loot">
+  <div class="sec-head">
+    <h2 id="h-loot">Loot randomizer</h2>
+    <p>Chests roll from a weighted loot pool and hand the result straight to the inventory, which applies the stacking rules above.</p>
+  </div>
+  <div class="split">
+    <div>
+      <ul class="points">
+        <li>Each chest drops 1–3 items, with 1–3 of each.</li>
+        <li>For each drop, the randomizer rolls 1–10 and walks the pool, adding up weights until the running total reaches the roll. A weight of 5 out of 10 is a 50% chance.</li>
+        <li>Duplicate drops are merged by item id before they're added, so a chest never fills two slots with the same item.</li>
+      </ul>
+      <p style="margin-bottom:4px; color:var(--ink-soft); font-size:.9375rem">Example pool with weights adding up to 10, and the roll range each one covers:</p>
+      <div class="weights" id="weights" aria-hidden="true"></div>
+      <div class="ranges" id="ranges" aria-hidden="true"></div>
+<pre><code><span class="k">local function</span> chooseItem()
+  <span class="k">local</span> randomNum = math.random(<span class="s">1</span>,<span class="s">10</span>)
+  <span class="k">local</span> counter = <span class="s">0</span>
+  <span class="k">for</span> rarity, item <span class="k">in</span> pairs(LootPool) <span class="k">do</span>
+    counter += item.weight
+    <span class="k">if</span> randomNum &lt;= counter <span class="k">then</span>
+      <span class="k">return</span> {name = item.name, description = item.description,
+              quantity = math.random(<span class="s">1</span>,<span class="s">3</span>), id = item.id}
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span></code></pre>
+    </div>
+    <div>
+      <div class="bench">
+        <h3>Check the odds</h3>
+        <p class="bench-sub">Roll the example pool 10,000 times and compare each item's share of drops with its weight.</p>
+        <button type="button" class="btn primary" id="simulate">Roll 10,000 times</button>
+        <table class="sim-table" style="margin-top:16px">
+          <thead><tr><th>Item</th><th class="num">Expected</th><th class="num">Rolled</th></tr></thead>
+          <tbody id="simBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer class="wrap">
+  <div class="foot">
+    <div>
+      <h2 style="font-size:2rem">More on Elysium</h2>
+      <p class="measure" style="color:var(--ink-soft); margin-top:12px">Elysium is a steampunk action RPG set after the world collapsed: players rebuild outposts and dive into dungeons through portals. The movement, VFX and world-building work is on the Gameplay and world page.</p>
+      <table style="margin-top:20px">
+        <tbody>
+          <tr><td>Dungeon generation and server systems</td><td><a href="https://www.linkedin.com/in/sean-hill-77aa6923a/">Sean Hill</a></td></tr>
+          <tr><td>World-building, movement and VFX</td><td><a href="https://linkedin.com/in/donovan-faucette-26b183269">Donovan Faucette</a></td></tr>
+        </tbody>
+      </table>
+      <div class="links">
+        <a href="https://www.linkedin.com/in/sean-hill-77aa6923a/">Sean Hill on LinkedIn</a>
+        <a href="https://linkedin.com/in/donovan-faucette-26b183269">Donovan Faucette on LinkedIn</a>
+      </div>
+    </div>
+    <div>
+      <h3 style="margin-bottom:12px">Coming next</h3>
+      <ul>
+        <li>Save inventories between sessions with DataStores</li>
+        <li>Mini-boss and trap room encounters</li>
+        <li>More dungeon themes for each zone</li>
+      </ul>
+    </div>
+  </div>
+</footer>
+
+<script>
+(() => {
+"use strict";
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const rnd = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
+
+/* ================= Dungeon generator (port of the Luau pipeline) ================= */
+const COLS = 48, ROWS = 28, ROOM = 3, N_ROOMS = 26;
+const MAX_EDGE = 14, MIN_QUALITY = 0.02;
+const canvas = document.getElementById("map");
+const ctx = canvas.getContext("2d");
+let D = null, shown = 4, anim = null;
+
+function placeRooms() {
+  const occ = new Set(), rooms = [];
+  let tries = 0;
+  while (rooms.length < N_ROOMS && tries++ < 5000) {
+    const x = rnd(2, COLS - ROOM - 2), y = rnd(2, ROWS - ROOM - 2);
+    let clash = false;
+    for (let i = x - 1; i <= x + ROOM && !clash; i++)
+      for (let j = y - 1; j <= y + ROOM; j++) if (occ.has(i + "," + j)) { clash = true; break; }
+    if (clash) continue;
+    for (let i = x; i < x + ROOM; i++) for (let j = y; j < y + ROOM; j++) occ.add(i + "," + j);
+    // pick one of four doors, like chosenDoor in the game
+    const side = rnd(1, 4), m = 1;
+    const door = side === 1 ? {x: x + m, y: y - 1} : side === 2 ? {x: x + ROOM, y: y + m}
+               : side === 3 ? {x: x + m, y: y + ROOM} : {x: x - 1, y: y + m};
+    rooms.push({x, y, door, id: rooms.length});
+  }
+  // start = first room, boss = farthest from it
+  let far = 0, boss = 1;
+  rooms.forEach((r, i) => { const d = Math.hypot(r.x - rooms[0].x, r.y - rooms[0].y); if (d > far) { far = d; boss = i; } });
+  return {rooms, occ, boss};
+}
+
+function circum(a, b, c) {
+  const d = 2 * (a.x * (b.y - c.y) + b.x * (c.y - a.y) + c.x * (a.y - b.y));
+  if (Math.abs(d) < 1e-12) return null;
+  const a2 = a.x*a.x + a.y*a.y, b2 = b.x*b.x + b.y*b.y, c2 = c.x*c.x + c.y*c.y;
+  const x = (a2 * (b.y - c.y) + b2 * (c.y - a.y) + c2 * (a.y - b.y)) / d;
+  const y = (a2 * (c.x - b.x) + b2 * (a.x - c.x) + c2 * (b.x - a.x)) / d;
+  return {x, y, r2: (a.x - x) ** 2 + (a.y - y) ** 2};
+}
+
+function delaunay(pts) {
+  const S = [{x: -1e4, y: -1e4, s: 1}, {x: 1e4, y: -1e4, s: 1}, {x: 0, y: 1e4, s: 1}];
+  let tris = [{v: S, c: circum(...S)}];
+  for (const p of pts) {
+    const bad = [], keep = [];
+    for (const t of tris) ((p.x - t.c.x) ** 2 + (p.y - t.c.y) ** 2 <= t.c.r2 ? bad : keep).push(t);
+    const edges = new Map();
+    for (const t of bad) for (let i = 0; i < 3; i++) {
+      const a = t.v[i], b = t.v[(i + 1) % 3];
+      const k = [a.x, a.y, b.x, b.y].join() , k2 = [b.x, b.y, a.x, a.y].join();
+      if (edges.has(k2)) edges.delete(k2); else edges.set(k, [a, b]);
+    }
+    tris = keep;
+    for (const [a, b] of edges.values()) { const c = circum(a, b, p); if (c) tris.push({v: [a, b, p], c}); }
+  }
+  return tris.filter(t => !t.v.some(v => v.s)).map(t => t.v);
+}
+
+function buildGraph(pts, tris) {
+  const parent = pts.map((_, i) => i);
+  const root = i => { while (parent[i] !== i) { parent[i] = parent[parent[i]]; i = parent[i]; } return i; };
+  const join = (a, b) => { a = root(a); b = root(b); if (a === b) return false; parent[b] = a; return true; };
+  const all = new Map(), kept = new Map();
+  const key = (a, b) => a < b ? a + "-" + b : b + "-" + a;
+  const len = (a, b) => Math.hypot(pts[a].x - pts[b].x, pts[a].y - pts[b].y);
+  let accepted = 0;
+  for (const t of tris) {
+    const [a, b, c] = t.map(v => v.i);
+    [[a, b], [b, c], [c, a]].forEach(([u, v]) => all.set(key(u, v), [u, v]));
+    const ab = len(a, b), bc = len(b, c), ca = len(c, a), per = ab + bc + ca;
+    const area = Math.abs((pts[b].x - pts[a].x) * (pts[c].y - pts[a].y) - (pts[b].y - pts[a].y) * (pts[c].x - pts[a].x)) / 2;
+    if (4 * area >= MIN_QUALITY * per * per && Math.max(ab, bc, ca) <= MAX_EDGE) {
+      accepted++;
+      [[a, b], [b, c], [c, a]].forEach(([u, v]) => kept.set(key(u, v), [u, v]));
+      join(a, b); join(b, c);
+    }
+  }
+  // reconnect isolated rooms with the shortest discarded edges
+  let bridges = 0;
+  [...all.values()].sort((p, q) => len(...p) - len(...q)).forEach(([u, v]) => {
+    if (join(u, v)) { kept.set(key(u, v), [u, v]); bridges++; }
+  });
+  return {all: [...all.values()], kept: [...kept.values()], accepted, bridges, len};
+}
+
+function prim(n, edges, len) {
+  const adj = Array.from({length: n}, () => []);
+  edges.forEach(([u, v]) => { adj[u].push(v); adj[v].push(u); });
+  const start = rnd(0, n - 1), visited = new Set([start]), tree = [], loops = [];
+  let pq = adj[start].map(v => [start, v]);
+  while (pq.length) {
+    pq.sort((p, q) => len(...p) - len(...q));
+    const [from, to] = pq.shift();
+    if (visited.has(to)) continue;
+    tree.push([from, to]); visited.add(to);
+    for (const nx of adj[to]) {
+      if (!visited.has(nx)) pq.push([to, nx]);
+      else if (nx !== from && rnd(1, 10) === 1 && loops.length < 11) loops.push([to, nx]);
+    }
+  }
+  return {tree, loops};
+}
+
+function greedyPath(a, b, blocked) {
+  const k = p => p.x + "," + p.y, h = p => Math.abs(p.x - b.x) + Math.abs(p.y - b.y);
+  const open = [{p: a, h: h(a), parent: null}], seen = new Set([k(a)]);
+  let guard = 0;
+  while (open.length && guard++ < 4000) {
+    // binary-heap behaviour, kept simple: pop lowest h
+    let bi = 0; for (let i = 1; i < open.length; i++) if (open[i].h < open[bi].h) bi = i;
+    const cur = open.splice(bi, 1)[0];
+    if (cur.p.x === b.x && cur.p.y === b.y) {
+      const path = []; for (let n = cur; n; n = n.parent) path.unshift(n.p); return path;
+    }
+    for (const [dx, dy] of [[1,0],[-1,0],[0,1],[0,-1]]) {
+      const np = {x: cur.p.x + dx, y: cur.p.y + dy};
+      if (np.x < 0 || np.y < 0 || np.x >= COLS || np.y >= ROWS) continue;
+      if (seen.has(k(np)) || blocked.has(k(np))) continue;
+      seen.add(k(np)); open.push({p: np, h: h(np), parent: cur});
+    }
+  }
+  return null;
+}
+
+function generate() {
+  const t0 = performance.now();
+  const {rooms, occ, boss} = placeRooms();
+  const pts = rooms.map((r, i) => ({x: r.door.x + .5, y: r.door.y + .5, i}));
+  const sorted = [...pts].sort((p, q) => p.x - q.x || p.y - q.y);
+  const tris = delaunay(sorted);
+  const g = buildGraph(pts, tris);
+  const {tree, loops} = prim(pts.length, g.kept, g.len);
+  const tiles = [], have = new Set();
+  for (const [u, v] of tree.concat(loops)) {
+    const path = greedyPath(rooms[u].door, rooms[v].door, occ);
+    if (!path) continue;
+    for (const p of path) { const kk = p.x + "," + p.y; if (!have.has(kk)) { have.add(kk); tiles.push(p); } }
+  }
+  D = {rooms, boss, pts, tris, g, tree, loops, tiles, ms: performance.now() - t0};
+  renderStats();
+}
+
+function renderStats() {
+  const s = [
+    ["Rooms", D.rooms.length], ["Triangles", D.tris.length], ["Kept", D.g.accepted],
+    ["Tree edges", D.tree.length], ["Loops", D.loops.length], ["Corridor tiles", D.tiles.length],
+    ["Built in", D.ms.toFixed(1) + " ms"]
+  ];
+  document.getElementById("stats").innerHTML = s.map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join("");
+}
+
+function sizeCanvas() {
+  const w = canvas.clientWidth || canvas.parentElement.clientWidth, dpr = Math.min(devicePixelRatio || 1, 2);
+  canvas.width = Math.round(w * dpr); canvas.height = Math.round(w * ROWS / COLS * dpr);
+}
+
+function draw(stage, t = 1) {
+  const W = canvas.width, H = canvas.height, c = W / COLS;
+  const C = {bg: css("--bg-raised"), grid: css("--grid"), ink: css("--ink"), soft: css("--ink-soft"),
+             brass: css("--gold"), rust: css("--copper"), ver: css("--cyan"), bgd: css("--bg")};
+  ctx.fillStyle = C.bg; ctx.fillRect(0, 0, W, H);
+  ctx.strokeStyle = C.grid; ctx.lineWidth = 1;
+  ctx.beginPath();
+  for (let i = 0; i <= COLS; i++) { ctx.moveTo(i * c + .5, 0); ctx.lineTo(i * c + .5, H); }
+  for (let j = 0; j <= ROWS; j++) { ctx.moveTo(0, j * c + .5); ctx.lineTo(W, j * c + .5); }
+  ctx.stroke();
+  const P = i => [D.pts[i].x * c, D.pts[i].y * c];
+  const line = (u, v, frac = 1) => { const [x1, y1] = P(u), [x2, y2] = P(v); ctx.moveTo(x1, y1); ctx.lineTo(x1 + (x2 - x1) * frac, y1 + (y2 - y1) * frac); };
+
+  // corridors
+  if (stage >= 4) {
+    const n = stage > 4 ? D.tiles.length : Math.floor(D.tiles.length * t);
+    ctx.fillStyle = C.ver;
+    for (let i = 0; i < n; i++) { const p = D.tiles[i]; ctx.fillRect(p.x * c + 1, p.y * c + 1, c - 1, c - 1); }
+  }
+  // triangulation
+  if (stage === 2 || stage === 3) {
+    ctx.strokeStyle = C.soft; ctx.globalAlpha = stage === 2 ? .7 : .25; ctx.lineWidth = Math.max(1, c / 10);
+    ctx.beginPath();
+    const ed = D.g.all, n = stage === 2 ? Math.ceil(ed.length * t) : ed.length;
+    for (let i = 0; i < n; i++) line(...ed[i]);
+    ctx.stroke(); ctx.globalAlpha = 1;
+  }
+  // tree + loops
+  if (stage === 3 || (stage === 4 && t < 1)) {
+    const fade = stage === 4 ? 1 - t * .8 : 1;
+    ctx.globalAlpha = fade; ctx.lineWidth = Math.max(2, c / 4); ctx.lineCap = "round";
+    const k = stage === 3 ? t * D.tree.length : D.tree.length;
+    ctx.strokeStyle = C.brass; ctx.beginPath();
+    D.tree.forEach((e, i) => { if (i < k) line(...e, Math.min(1, k - i)); }); ctx.stroke();
+    ctx.strokeStyle = C.rust; ctx.setLineDash([c / 2, c / 3]); ctx.beginPath();
+    if (stage > 3 || t > .6) D.loops.forEach(e => line(...e)); ctx.stroke(); ctx.setLineDash([]);
+    ctx.globalAlpha = 1;
+  }
+  // rooms
+  const nRooms = stage === 1 ? Math.ceil(D.rooms.length * t) : D.rooms.length;
+  for (let i = 0; i < nRooms; i++) {
+    const r = D.rooms[i];
+    const fill = i === 0 ? C.brass : i === D.boss ? C.rust : C.bgd;
+    ctx.fillStyle = fill; ctx.fillRect(r.x * c, r.y * c, ROOM * c, ROOM * c);
+    ctx.strokeStyle = C.ink; ctx.lineWidth = Math.max(1.5, c / 8);
+    ctx.strokeRect(r.x * c, r.y * c, ROOM * c, ROOM * c);
+    ctx.fillStyle = C.ink; ctx.fillRect(r.door.x * c + c * .3, r.door.y * c + c * .3, c * .4, c * .4);
+  }
+}
+
+function setPressed(s) {
+  document.querySelectorAll(".stages button").forEach(b => b.setAttribute("aria-pressed", String(+b.dataset.stage === s)));
+}
+
+function play(from = 1) {
+  cancelAnimationFrame(anim);
+  if (reduced) { shown = 4; setPressed(4); draw(4); return; }
+  const durs = {1: 700, 2: 900, 3: 1100, 4: 1500};
+  let stage = from, start = performance.now();
+  const tick = now => {
+    const t = Math.min(1, (now - start) / durs[stage]);
+    setPressed(stage); draw(stage, t);
+    if (t < 1) anim = requestAnimationFrame(tick);
+    else if (stage < 4) { stage++; start = now; anim = requestAnimationFrame(tick); }
+    else shown = 4;
+  };
+  anim = requestAnimationFrame(tick);
+}
+
+document.querySelectorAll(".stages button").forEach(b => b.addEventListener("click", () => {
+  cancelAnimationFrame(anim); shown = +b.dataset.stage; setPressed(shown); draw(shown);
+}));
+document.getElementById("regen").addEventListener("click", () => { generate(); play(1); });
+let rt; addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(() => { sizeCanvas(); draw(shown); }, 120); });
+matchMedia("(prefers-color-scheme: light)").addEventListener?.("change", () => draw(shown));
+
+sizeCanvas(); generate(); play(1);
+
+/* ================= Inventory (port of InventoryServer.UpdateInv) ================= */
+const SLOTS = 10;
+const ITEMS = {
+  "0x1001": {name: "Starter blade", type: "Weapon", stackable: 1},
+  "0x2101": {name: "Brass gauntlets", type: "Armor", stackable: 1},
+  "0x3001": {name: "Health tonic", type: "Consumable", stackable: 10},
+  "0x3002": {name: "Scrap gear", type: "Consumable", stackable: 10},
+  "0x3003": {name: "Ether shard", type: "Consumable", stackable: 10},
+};
+let inv = [], nextStack = 0, flashIds = new Set();
+const logEl = document.getElementById("log"), slotsEl = document.getElementById("slots");
+
+function log(html) {
+  const li = document.createElement("li"); li.innerHTML = html;
+  logEl.prepend(li); while (logEl.children.length > 5) logEl.lastChild.remove();
+}
+function makeStack(id, n) { const s = {id, qty: n, stackable: ITEMS[id].stackable, sid: nextStack++}; inv.push(s); flashIds.add(s.sid); return s; }
+
+function addItem(id, num) {
+  if (typeof id !== "string" || !id.startsWith("0x") || !ITEMS[id]) return;
+  const it = ITEMS[id]; let left = num; const steps = [];
+  const found = inv.find(s => s.id === id && s.qty < s.stackable);
+  if (found) {
+    const can = Math.min(left, it.stackable - found.qty);
+    found.qty += can; left -= can; flashIds.add(found.sid);
+    steps.push(`topped up a stack with ${can}`);
+  }
+  let made = 0;
+  while (left > 0 && inv.length < SLOTS) { const n = Math.min(left, it.stackable); makeStack(id, n); left -= n; made++; }
+  if (made) steps.push(`opened ${made} new stack${made > 1 ? "s" : ""}`);
+  let msg = `<b>+${num} ${it.name}</b>: ${steps.join(", ") || "no room"}.`;
+  if (left > 0) msg += ` <span class="lost">Inventory full, ${left} lost.</span>`;
+  log(msg); render();
+}
+
+function render() {
+  slotsEl.innerHTML = "";
+  for (let i = 0; i < SLOTS; i++) {
+    const s = inv[i];
+    if (!s) { const d = document.createElement("div"); d.className = "slot"; d.setAttribute("aria-label", "Empty slot"); slotsEl.append(d); continue; }
+    const it = ITEMS[s.id], b = document.createElement("button");
+    b.type = "button"; b.className = "slot full" + (flashIds.has(s.sid) && !reduced ? " flash" : "");
+    b.setAttribute("aria-label", `${it.name}, ${s.qty} of ${s.stackable}. Delete stack`);
+    b.innerHTML = `<span class="nm">${it.name}</span><span><span class="qty">${s.qty}/${s.stackable}</span><span class="bar"><i style="width:${s.qty / s.stackable * 100}%"></i></span></span>`;
+    b.addEventListener("click", () => { inv = inv.filter(x => x !== s); log(`Deleted a stack of ${s.qty} ${it.name}.`); render(); });
+    slotsEl.append(b);
+  }
+  flashIds.clear();
+}
+
+function resetInv() { inv = []; nextStack = 0; logEl.innerHTML = ""; makeStack("0x1001", 1); log("New player: starter blade added."); render(); }
+document.querySelectorAll("[data-add]").forEach(b => b.addEventListener("click", () => addItem(b.dataset.add, +b.dataset.n)));
+document.getElementById("reset").addEventListener("click", resetInv);
+resetInv();
+
+/* ================= Loot (port of LootRandomizer) ================= */
+const POOL = [
+  {id: "0x3002", weight: 5, color: "--cyan"},
+  {id: "0x3001", weight: 3, color: "--gold"},
+  {id: "0x3003", weight: 2, color: "--copper"},
+];
+function chooseItem() {
+  const roll = rnd(1, 10); let counter = 0;
+  for (const item of POOL) { counter += item.weight; if (roll <= counter) return {id: item.id, quantity: rnd(1, 3)}; }
+}
+function randomizer() {
+  const out = [], n = rnd(1, 3);
+  for (let i = 0; i < n; i++) {
+    const item = chooseItem(), dup = out.find(x => x.id === item.id);
+    if (dup) dup.quantity += item.quantity; else out.push(item);
+  }
+  return out;
+}
+document.getElementById("chest").addEventListener("click", () => {
+  const loot = randomizer();
+  log(`<b>Chest</b> dropped ${loot.map(l => `${l.quantity} ${ITEMS[l.id].name}`).join(", ")}.`);
+  loot.forEach(l => addItem(l.id, l.quantity));
+});
+
+// weight bar
+let acc = 0;
+document.getElementById("weights").innerHTML = POOL.map(p => `<div style="flex:${p.weight};background:var(${p.color})">${ITEMS[p.id].name}</div>`).join("");
+document.getElementById("ranges").innerHTML = POOL.map(p => { const a = acc + 1; acc += p.weight; return `<span style="flex:${p.weight}">Roll ${a}–${acc}</span>`; }).join("");
+
+function simulate() {
+  const counts = Object.fromEntries(POOL.map(p => [p.id, 0])), N = 10000;
+  for (let i = 0; i < N; i++) counts[chooseItem().id]++;
+  document.getElementById("simBody").innerHTML = POOL.map(p =>
+    `<tr><td>${ITEMS[p.id].name}</td><td class="num">${p.weight * 10}%</td><td class="num">${(counts[p.id] / N * 100).toFixed(1)}%</td></tr>`).join("");
+}
+document.getElementById("simulate").addEventListener("click", simulate);
+simulate();
+})();
+
+// video: no autoplay with reduced motion; pause when scrolled away
+(() => {
+  const vids = document.querySelectorAll("video");
+  if (matchMedia("(prefers-reduced-motion: reduce)").matches) vids.forEach(v => { v.removeAttribute("autoplay"); v.pause(); });
+  else if ("IntersectionObserver" in window) {
+    const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) e.target.play().catch(() => {}); else e.target.pause(); }), {threshold: .25});
+    vids.forEach(v => io.observe(v));
+  }
+})();
+</script>
+</body>
+</html>
